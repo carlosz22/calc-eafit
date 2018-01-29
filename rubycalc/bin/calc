@@ -1,0 +1,63 @@
+#!/usr/bin/env ruby
+
+require 'rubygems'
+require 'calculator'
+require 'calcex'
+$calc = Calculator.new()
+expr = ""
+results = []
+ENV.each do |k,v|
+  if k[0,7] == "CALCVAR" then
+    $calc.variables[k]=v.to_i
+  end
+end
+cont = 0;
+oper = :none
+ARGV.each do |v|
+  cont = cont +1
+  case v
+  when "-e"
+    $calc.environ=true
+  when "-v"
+    oper = :var
+  else
+    case oper
+    when :var
+      $calc.eval(v.to_s.chomp)
+      oper = :none
+    else
+      $calc.interactMod=true
+      $stdout.flush
+      lines = ARGF.readlines
+      listExpr = ""
+      lines.each do |l|
+        listExpr = listExpr + l
+      end
+      results = $calc.eval(listExpr)
+      cant=0
+      results.each do |p|
+        puts "=> " + p.to_s + $calc.assignat[cant]
+        cant = cant+1
+      end
+    end
+  end
+end
+(1..cont).each do |n|
+  ARGV.shift
+end
+if(!$calc.interactMod)
+  $stdout.print "> "
+  while((text=gets)!=nil)
+    $stdout.flush
+    begin
+      result = $calc.eval(text)
+      puts "= " + result.shift.to_s + $calc.assignat[0]
+      $calc.assignat.clear
+    rescue ParseError
+      puts "Parse Error"
+    rescue UnrecognizedTokenException
+      puts "UnrecognizedTokenException"
+    end
+    $stdout.print "> "
+  end
+end
